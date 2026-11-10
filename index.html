@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WHALE RADAR | Pro Terminal</title>
+                                         
+<style>
+:root{
+    --bg:#080d14;--panel:#101925;--border:#263547;
+    --text:#dce6f1;--muted:#8495a9;
+    --green:#20d69a;--red:#ff596b;--blue:#58a6ff;--gold:#ffc857;
+    --font-scale:1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif;font-size:calc(13px * var(--font-scale));overflow-x:hidden}
+button,select,input{font:inherit}
+button,select{color:var(--text);background:#172333;border:1px solid var(--border);border-radius:6px;padding:7px 10px;cursor:pointer}
+button:hover,select:hover{border-color:#55718e}
+button.active{background:#174d42;border-color:var(--green);color:#aaffdf}
+input{background:#0a121d;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;outline:none}
+input:focus{border-color:var(--blue)}
+
+/* TOP BANNER */
+.top-banner{
+    background:#05090f;
+    border-bottom:1px solid var(--border);
+    text-align:center;
+    padding:4px 10px;
+    font-size:10px;
+    color:var(--muted);
+    font-family:Consolas,Segoe UI,Arial,sans-serif;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+}
+
+/* HEADER */
+.header{min-height:66px;display:flex;align-items:center;gap:18px;padding:0 17px;border-bottom:1px solid var(--border);background:#0c1520;position:sticky;top:0;z-index:100}
+.brand{font-size:19px;font-weight:900;letter-spacing:1.2px;color:#d9eaff;white-space:nowrap;flex-shrink:0}
+.brand span{color:var(--blue)}
+.market-summary{display:flex;align-items:center;justify-content:space-around;gap:clamp(12px,2vw,28px);padding:8px 18px;background:#111e2b;border:1px solid #26384c;border-radius:8px;min-width:0;flex:1}
+.summary-title{color:#8195aa;font-size:10px;font-weight:800;letter-spacing:1px;white-space:nowrap}
+.summary-item{display:flex;align-items:center;gap:7px;white-space:nowrap;font-size:11px}
+.summary-item b{font-size:14px}
+.summary-buy{color:var(--green)}.summary-sell{color:var(--red)}.summary-net{color:var(--blue)}
+.header-right{display:flex;align-items:center;gap:12px;white-space:nowrap;flex-shrink:0}
+.connection{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}
+.led{width:8px;height:8px;border-radius:50%;background:#d69b32;box-shadow:0 0 8px #d69b32}
+.led.green{background:var(--green);box-shadow:0 0 9px var(--green)}
+.led.red{background:var(--red);box-shadow:0 0 9px var(--red)}
+#clock{color:#b8c8da;font-family:Consolas,monospace;font-size:12px}
+#languageSelect{padding:6px 8px;font-weight:800}
+#fontSizeSelect{min-width:105px}
+.toolbar .leaders-toggle{border-color:#47749c;color:#c8e4ff}
+.toolbar .leaders-toggle.active{background:#17334b;border-color:var(--blue);color:#d9efff}
+.window-head-actions{display:flex;align-items:center;gap:7px}
+.window-action{padding:3px 7px;min-width:27px;line-height:1.2;font-size:12px}
+.window-action.pinned{color:var(--gold);border-color:#92702d;background:#332914}
+#topWindow{transition:opacity .18s ease}
+.workspace.leaders-hidden .top-window{display:none}
+.workspace.leaders-hidden .buy-window{top:10px;height:calc(100% - 20px)}
+.workspace.leaders-hidden .sell-window{top:10px;height:calc(100% - 20px)}
+.workspace.leaders-hidden{min-height:780px}
+
+/* Font-size presets */
+body[data-font-size="small"]{--font-scale:.90}
+body[data-font-size="normal"]{--font-scale:1}
+body[data-font-size="large"]{--font-scale:1.12}
+body[data-font-size="xlarge"]{--font-scale:1.24}
+body[data-font-size="small"] .window-body,body[data-font-size="small"] .toolbar,body[data-font-size="small"] .top-card,body[data-font-size="small"] .signal-row{font-size:calc(13px * var(--font-scale))}
+body[data-font-size="large"] .signal-row,body[data-font-size="xlarge"] .signal-row{padding:calc(9px * var(--font-scale));min-height:calc(49px * var(--font-scale))}
+body[data-font-size="large"] .top-card li,body[data-font-size="xlarge"] .top-card li{padding:calc(5px * var(--font-scale)) 0}
+.brand{font-size:calc(19px * var(--font-scale))}
+.summary-title{font-size:calc(10px * var(--font-scale))}
+.summary-item{font-size:calc(11px * var(--font-scale))}
+.summary-item b{font-size:calc(14px * var(--font-scale))}
+.connection{font-size:calc(11px * var(--font-scale))}
+#clock{font-size:calc(12px * var(--font-scale))}
+.ticker-start{font-size:calc(10px * var(--font-scale))}
+.ticker-item{font-size:calc(11px * var(--font-scale))}
+
+/* TICKER */
+.ticker-wrap{display:flex;height:39px;align-items:center;background:#0d1722;border-bottom:1px solid var(--border);overflow:hidden}
+.ticker-start{padding:0 12px;height:100%;display:flex;align-items:center;color:#8fa4b9;background:#142130;border-right:1px solid var(--border);font-size:10px;white-space:nowrap;font-family:Consolas,monospace}
+.ticker-viewport{overflow:hidden;flex:1;white-space:nowrap}
+.ticker-track{display:inline-flex;width:max-content;animation:marquee 160s linear infinite;will-change:transform}
+.ticker-track:hover{animation-play-state:paused}
+.ticker-item{padding:0 15px;border-right:1px solid #29394a;font-family:Consolas,monospace;font-size:11px;display:inline-flex;align-items:center;gap:10px}
+.ticker-box{display:inline-block;min-width:150px;text-align:left;font-family:Consolas,monospace}
+.ticker-pos{color:var(--green);font-weight:700}
+.ticker-neg{color:var(--red);font-weight:700}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:10px 14px;background:#0b131e;border-bottom:1px solid var(--border)}
+.toolbar-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.toolbar-label{color:var(--muted);font-size:11px;font-weight:700}
+.toolbar .spacer{flex:1}
+.sound-button.enabled{color:#b4ffe2;border-color:var(--green);background:#12382f}
+.danger-button{color:#ff9ba5}
+
+/* WORKSPACE */
+.workspace{position:relative;min-height:1000px;padding:10px;overflow:hidden}
+.window{position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:9px;overflow:hidden;min-width:230px;min-height:130px;resize:both;box-shadow:0 5px 20px #0005}
+.window-head{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:#152231;border-bottom:1px solid var(--border);cursor:move;user-select:none}
+.window-title{font-size:11px;font-weight:900;letter-spacing:.5px}
+.window-subtitle{font-size:10px;color:var(--muted)}
+.window-body{padding:9px;height:calc(100% - 36px);overflow:auto}
+.buy-window{left:10px;top:227px;width:calc(50% - 15px);height:750px}
+.sell-window{left:calc(50% + 5px);top:227px;width:calc(50% - 15px);height:750px}
+.top-window{left:10px;top:10px;width:calc(100% - 20px);height:205px}
+
+/* SIGNALS */
+.signal-list{display:flex;flex-direction:column;gap:6px}
+.signal-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px;border-radius:6px;background:#0b141e;border:1px solid #1d2b3b;border-left:4px solid var(--green);font-family:Consolas,monospace;min-height:49px;transition:border-color .2s,box-shadow .2s}
+.signal-row.sell-row{border-left-color:var(--red)}
+.signal-row.flash-buy{animation:flashGreen 1.1s ease-in-out 4}
+.signal-row.flash-sell{animation:flashRed 1.1s ease-in-out 4}
+@keyframes flashGreen{0%,100%{background:#123b31;box-shadow:0 0 14px #20d69a70}50%{background:#0b141e;box-shadow:none}}
+@keyframes flashRed{0%,100%{background:#49232d;box-shadow:0 0 14px #ff596b70}50%{background:#0b141e;box-shadow:none}}
+.signal-row.tier-500k{border-top-color:#b58c37;border-bottom-color:#b58c37;box-shadow:inset 0 0 10px #ffc85712}
+.signal-row.tier-1m{border:1px solid var(--gold);border-left:5px solid var(--gold);background:linear-gradient(90deg,#382b14,#171b20);box-shadow:0 0 12px #ffc85730,inset 0 0 12px #ffc85712}
+.signal-main{min-width:0}
+.signal-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.coin-name{color:#ffd27a;font-weight:900;cursor:pointer}
+.coin-name:hover{text-decoration:underline}
+.signal-type{font-weight:900}
+.buy-color{color:var(--green)}.sell-color{color:var(--red)}
+.signal-detail{font-size:10px;color:#9aabbd;margin-top:5px}
+.signal-value{text-align:right;white-space:nowrap}
+.signal-value strong{display:block;font-size:12px}
+.signal-value small{color:var(--muted);font-size:10px}
+.counter{background:#1c2d42;color:#9cc7ff;padding:3px 5px;border-radius:4px;font-size:10px}
+.tier-badge{display:inline-block;padding:3px 5px;border-radius:4px;font-size:9px;font-weight:900;letter-spacing:.4px}
+.badge-500k{background:#493819;color:#ffd27a}
+.badge-1m{background:#59451b;color:#ffe29a;border:1px solid #a98635}
+.empty-state{padding:25px 10px;text-align:center;color:#71849a;font-size:11px}
+
+/* EDGE ALERTS */
+.edge-alert{position:fixed;top:35%;z-index:250;width:350px;max-width:88vw;padding:15px 17px;border-radius:10px;background:#10251f;border:1px solid #2c9b70;box-shadow:0 12px 38px #0009;opacity:0;pointer-events:none;transition:transform .55s ease,opacity .45s ease;max-height:70vh;overflow:auto}
+.edge-bull{left:0;transform:translateX(-110%);border-left:5px solid var(--green)}
+.edge-bear{right:0;transform:translateX(110%);background:#2b151c;border-color:#a83b4d;border-right:5px solid var(--red)}
+.edge-alert.visible{opacity:1}
+.edge-bull.visible{transform:translateX(12px)}
+.edge-bear.visible{transform:translateX(-12px)}
+.edge-kicker{font-size:10px;font-weight:900;letter-spacing:1px;color:#8dffc9;margin-bottom:8px}
+.edge-bear .edge-kicker{color:#ff9eaa}
+.edge-alert strong{font-size:20px;display:block;color:#e8fff5}
+.edge-bear strong{color:#ffe7ea}
+.edge-detail{font-size:11px;color:#a9c4b8;margin-top:9px;line-height:1.65;white-space:pre-line}
+.edge-bear .edge-detail{color:#d9aeb5}
+.edge-reason{margin-top:10px;padding-top:9px;border-top:1px solid #ffffff20;font-size:10px;line-height:1.55;color:#c2d8cd}
+.edge-bear .edge-reason{color:#e3c3c8}
+.edge-note{margin-top:9px;font-size:9px;line-height:1.5;color:#829a8f}
+.edge-bear .edge-note{color:#c29ba2}
+
+/* TOP RANKINGS */
+.top-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.top-card{background:#0b141e;border:1px solid #223347;border-radius:7px;overflow:hidden}
+.top-card h4{margin:0;padding:9px;font-size:10px;border-bottom:1px solid #263547}
+.top-card ol{margin:0;padding:7px 10px 7px 28px}
+.top-card li{padding:5px 0;font-family:Consolas,monospace;font-size:10px;color:#c5d2df}
+.top-card li span{float:right;color:#8fa6bc}
+.buy-heading{color:var(--green)}.sell-heading{color:var(--red)}
+
+/* SIGNAL RADAR PANEL */
+#radarWindow{position:fixed;z-index:220;right:18px;bottom:18px;width:min(760px,calc(100vw - 36px));height:390px;min-width:320px;min-height:220px;display:none;flex-direction:column;resize:both;overflow:hidden;background:#0d1824;border:1px solid #36516c;border-radius:10px;box-shadow:0 14px 45px #000b}
+#radarWindow .window-head{flex-shrink:0;background:#17283a;cursor:move}
+.radar-toolbar{display:flex;align-items:center;gap:7px;padding:9px 10px;border-bottom:1px solid var(--border);background:#101d2b}
+.radar-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.radar-tabs button{padding:5px 11px;font-size:11px}
+.radar-count{margin-left:auto;color:var(--muted);font-size:11px}
+.radar-content{flex:1;min-height:0;overflow:auto;padding:8px}
+.radar-table{width:100%;border-collapse:collapse;font-family:Consolas,monospace;font-size:11px;white-space:nowrap}
+.radar-table th{position:sticky;top:0;background:#172638;color:#91a9c1;text-align:left;padding:9px 8px;z-index:1}
+.radar-table td{padding:9px 8px;border-bottom:1px solid #1c2b3b}
+.radar-table tr:hover td{background:#172536}
+.radar-bull-row td:nth-child(2){color:var(--green);font-weight:900}
+.radar-bear-row td:nth-child(2){color:var(--red);font-weight:900}
+.radar-new{animation:radarFlash 1s ease-in-out 3}
+@keyframes radarFlash{0%,100%{background:#173a31}50%{background:transparent}}
+#radarToggle{border-color:#8066bd;color:#d8c9ff}
+#radarToggle.active{background:#30234b;border-color:#a78bfa;color:#eee5ff}
+#edgeAlertsToggle{border-color:#3b8d75;color:#a8f0d2}
+#edgeAlertsToggle.disabled{border-color:#8b5260;color:#ffb9c4;background:#28171d}
+.radar-toolbar select{max-width:170px;padding:6px 8px;font-size:11px}
+body.edge-alerts-disabled .edge-alert{display:none!important}
+@media(max-width:650px){#radarWindow{left:8px!important;right:8px;bottom:8px;width:calc(100vw - 16px)!important;height:48vh;min-width:0}.radar-content{overflow:auto}.radar-table{font-size:10px}}
+
+/* RESPONSIVE */
+@media(max-width:950px){
+.header{gap:9px;padding:0 9px}.brand{font-size:15px}.market-summary{gap:10px;padding:6px 9px}
+.summary-title{display:none}.summary-item{font-size:9px}.summary-item b{font-size:11px}
+.top-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:650px){
+.header{height:auto;min-height:90px;flex-wrap:wrap;padding:9px}
+.brand{width:100%}.market-summary{order:2;width:100%;flex:1;justify-content:space-around}
+.header-right{position:absolute;right:10px;top:12px;gap:6px}
+.connection{font-size:0}.toolbar{gap:6px}
+.toolbar button,.toolbar select{font-size:10px;padding:6px}
+.workspace{min-height:1500px}.window{left:10px!important;width:calc(100% - 20px)!important}
+.buy-window{top:200px!important;height:470px}.sell-window{top:680px!important;height:470px}
+.top-window{top:1160px!important;height:330px}.workspace.leaders-hidden .buy-window{top:10px!important;height:470px}.workspace.leaders-hidden .sell-window{top:490px!important;height:470px}.workspace.leaders-hidden{min-height:980px}.top-grid{grid-template-columns:repeat(2,1fr)}
+.edge-alert{top:25%;width:320px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- EN ÜST İNCE AÇIKLAMA BANDI -->
+<div class="top-banner" data-i18n="topBannerText">Binance Spot Piyasası Alış ve Satış Takibi</div>
+
+<header class="header">
+    <div class="brand">🐋 WHALE <span>RADAR</span></div>
+
+    <div class="market-summary">
+        <span class="summary-title" data-i18n="marketSummary">PİYASA ÖZETİ</span>
+        <div class="summary-item summary-buy"><span data-i18n="buy">ALIŞ</span> <b id="headerBuy">$0</b></div>
+        <div class="summary-item summary-sell"><span data-i18n="sell">SATIŞ</span> <b id="headerSell">$0</b></div>
+        <div class="summary-item summary-net"><span data-i18n="net">NET</span> <b id="headerNet">$0</b></div>
+    </div>
+
+    <div class="header-right">
+        <div class="connection">
+            <span class="led" id="connectionLed"></span>
+            <span id="connectionText" data-i18n="connecting">Bağlantı hazırlanıyor</span>
+        </div>
+        <div id="clock">00:00:00 · UTC+3</div>
+        <select id="languageSelect" aria-label="Language">
+            <option value="tr">TR</option>
+            <option value="en">EN</option>
+        </select>
+    </div>
+</header>
+
+<div class="ticker-wrap">
+    <div class="ticker-start" id="dataStartLabel">Veri Başlangıç: --:--:--</div>
+    <div class="ticker-viewport"><div class="ticker-track" id="tickerTrack">
+        <span class="ticker-item">İşlemler bekleniyor...</span>
+    </div></div>
+</div>
+
+<div class="toolbar">
+    <div class="toolbar-group">
+        <span class="toolbar-label" data-i18n="market">PİYASA</span>
+        <select id="marketSelect">
+            <option value="all">USDT + BTC</option>
+            <option value="usdt">USDT</option>
+            <option value="btc">BTC</option>
+        </select>
+    </div>
+
+    <div class="toolbar-group">
+        <span class="toolbar-label" data-i18n="assetFilterLabel">VARLIK FİLTRESİ</span>
+        <select id="globalAssetFilter" aria-label="Tüm sinyaller için varlık filtresi">
+            <option value="all" data-i18n="assetAll">Tüm Kriptolar</option>
+            <option value="nostable" selected data-i18n="assetNoStable">Sabitler Hariç</option>
+            <option value="majors" data-i18n="assetMajors">Sadece BTC + ETH</option>
+            <option value="stable" data-i18n="assetStable">Sadece Sabit Kriptolar</option>
+            <option value="altcoins" selected data-i18n="assetAltcoins">Sadece Altcoinler</option>
+        </select>
+    </div>
+
+    <div class="toolbar-group">
+        <span class="toolbar-label" data-i18n="whaleLimit">BALİNA LİMİTİ</span>
+        <select id="threshold">
+            <option value="10000">$10K</option>
+            <option value="25000">$25K</option>
+            <option value="50000" selected>$50K</option>
+            <option value="100000">$100K</option>
+            <option value="500000">$500K</option>
+            <option value="1000000">$1M</option>
+        </select>
+    </div>
+
+    <div class="toolbar-group">
+        <input id="coinSearch" placeholder="Coin ara..." data-i18n-placeholder="searchCoin" style="width:125px">
+    </div>
+
+    <div class="toolbar-group">
+        <button id="soundButton" class="sound-button">🔇 SES KAPALI</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="toolbar-group">
+        <button id="clearData" class="danger-button" data-i18n="clearData">Verileri Sıfırla</button>
+        <button id="leadersToggle" class="leaders-toggle active" data-i18n="hideLeaders">📊 Liderleri Gizle</button>
+        <button id="radarToggle" data-i18n="radarTitle">📡 SİNYAL RADARI</button>
+        <button id="edgeAlertsToggle" type="button">🔔 YAN UYARILAR AÇIK</button>
+        <label class="toolbar-label" for="fontSizeSelect" data-i18n="fontSize">YAZI BOYUTU</label>
+        <select id="fontSizeSelect" aria-label="Font size">
+            <option value="small" data-i18n="fontSmall">Küçük</option>
+            <option value="normal" data-i18n="fontNormal" selected>Normal</option>
+            <option value="large" data-i18n="fontLarge">Büyük</option>
+            <option value="xlarge" data-i18n="fontXLarge">Çok büyük</option>
+        </select>
+    </div>
+</div>
+
+<main class="workspace" id="workspace">
+
+    <section class="window top-window" id="topWindow">
+        <div class="window-head">
+            <span class="window-title" data-i18n="marketLeaders">📊 PİYASA LİDERLERİ</span>
+            <span class="window-head-actions">
+                <span class="window-subtitle" data-i18n="sessionSubtitle">Bu oturumda oluşan işlemler · Seçili limit</span>
+                <button type="button" id="pinLeaders" class="window-action" title="Sabitle" aria-label="Sabitle">📌</button>
+                <button type="button" id="closeLeaders" class="window-action" title="Kapat" aria-label="Kapat">✕</button>
+            </span>
+        </div>
+        <div class="window-body">
+            <div class="top-grid">
+                <div class="top-card"><h4 class="buy-heading" data-i18n="mostBuyTrades">🟢 EN ÇOK ALIM İŞLEMİ</h4><ol id="topBuyCount"></ol></div>
+                <div class="top-card"><h4 class="sell-heading" data-i18n="mostSellTrades">🔴 EN ÇOK SATIŞ İŞLEMİ</h4><ol id="topSellCount"></ol></div>
+                <div class="top-card"><h4 class="buy-heading" data-i18n="recentBuyTitle">🟢 SON 15 DK EN ÇOK ALINAN</h4><ol id="topRecentBuy"></ol></div>
+                <div class="top-card"><h4 class="sell-heading" data-i18n="recentSellTitle">🔴 SON 15 DK EN ÇOK SATILAN</h4><ol id="topRecentSell"></ol></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="window buy-window" id="buyWindow">
+        <div class="window-head">
+            <span class="window-title buy-heading" data-i18n="largeBuys">🟢 BÜYÜK ALIM İŞLEMLERİ</span>
+            <span class="window-subtitle" id="buyCount">0 işlem</span>
+        </div>
+        <div class="window-body">
+            <div class="signal-list" id="buyList"><div class="empty-state" data-i18n="waitingBuys">Büyük alım işlemleri bekleniyor...</div></div>
+        </div>
+    </section>
+
+    <section class="window sell-window" id="sellWindow">
+        <div class="window-head">
+            <span class="window-title sell-heading" data-i18n="largeSells">🔴 BÜYÜK SATIŞ İŞLEMLERİ</span>
+            <span class="window-subtitle" id="sellCount">0 işlem</span>
+        </div>
+        <div class="window-body">
+            <div class="signal-list" id="sellList"><div class="empty-state" data-i18n="waitingSells">Büyük satış işlemleri bekleniyor...</div></div>
+        </div>
+    </section>
+
+</main>
+
+<section id="radarWindow" aria-label="Signal Radar">
+    <div class="window-head">
+        <span class="window-title" data-i18n="radarTitle">📡 SİNYAL RADARI</span>
+        <span class="window-head-actions">
+            <span class="window-subtitle" data-i18n="radarSubtitle">Son 5 dakikadaki adaylar</span>
+            <button type="button" id="pinRadar" class="window-action" title="Sabitle">📍</button>
+            <button type="button" id="closeRadar" class="window-action" title="Kapat">✕</button>
+        </span>
+    </div>
+    <div class="radar-toolbar">
+        <div class="radar-tabs">
+            <button type="button" data-radar-tab="all" class="active" data-i18n="radarAll">Tümü</button>
+            <button type="button" data-radar-tab="bull" data-i18n="radarBull">🐂 Boğa</button>
+            <button type="button" data-radar-tab="bear" data-i18n="radarBear">🐻 Ayı</button>
+        </div>
+        <span class="radar-count"><span data-i18n="radarCount">Sinyal</span>: <b id="radarCount">0</b></span>
+    </div>
+    <div class="radar-content">
+        <table class="radar-table">
+            <thead><tr>
+                <th data-i18n="radarCoin">COIN</th><th data-i18n="radarDirection">YÖN</th>
+                <th data-i18n="radarStrength">ORAN</th><th data-i18n="radarPrice">FİYAT</th>
+                <th data-i18n="radarTime">SAAT</th><th data-i18n="buyCount">ALIŞ</th>
+                <th data-i18n="sellCount">SATIŞ</th><th data-i18n="radarVolume">HACİM</th>
+            </tr></thead>
+            <tbody id="radarTableBody"><tr><td colspan="8" class="empty-state">Henüz sinyal oluşmadı.</td></tr></tbody>
+        </table>
+    </div>
+</section>
+
+<div id="bullEdgeAlert" class="edge-alert edge-bull" aria-live="polite">
+    <div class="edge-kicker" data-i18n="bullCandidate">🐂 POTANSİYEL BOĞA ADAYI</div>
+    <strong id="bullEdgeCoin">--</strong>
+    <div id="bullEdgeDetail" class="edge-detail"></div>
+    <div id="bullEdgeReason" class="edge-reason"></div>
+    <div class="edge-note" data-i18n="candidateNote">Bu uyarı gerçekleşen işlemlere dayalı kısa vadeli bir değerlendirmedir. Fiyatın bu yönde hareket edeceğini garanti etmez.</div>
+</div>
+
+<div id="bearEdgeAlert" class="edge-alert edge-bear" aria-live="polite">
+    <div class="edge-kicker" data-i18n="bearCandidate">🐻 POTANSİYEL AYI ADAYI</div>
+    <strong id="bearEdgeCoin">--</strong>
+    <div id="bearEdgeDetail" class="edge-detail"></div>
+    <div id="bearEdgeReason" class="edge-reason"></div>
+    <div class="edge-note" data-i18n="candidateNote">Bu uyarı gerçekleşen işlemlere dayalı kısa vadeli bir değerlendirmedir. Fiyatın bu yönde hareket edeceğini garanti etmez.</div>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const TEXT = {
+tr:{
+ topBannerText:"Binance Spot Piyasası Alış ve Satış Takibi",
+ marketSummary:"PİYASA ÖZETİ",buy:"TOPLAM ALIŞ",sell:"TOPLAM SATIŞ",net:"NET BASKI",
+ radarTitle:"📡 SİNYAL RADARI",radarSubtitle:"Son 5 dakikadaki adaylar",radarAll:"Tümü",radarBull:"🐂 Boğa",radarBear:"🐻 Ayı",radarCount:"Sinyal",radarCoin:"COIN",radarDirection:"YÖN",radarStrength:"ORAN",radarPrice:"FİYAT",radarTime:"SAAT",radarVolume:"HACİM",radarEmpty:"Henüz sinyal oluşmadı.",assetAll:"Tüm Kriptolar",assetNoStable:"Sabitler Hariç",assetMajors:"Sadece BTC + ETH",assetStable:"Sadece Sabit Kriptolar",assetAltcoins:"Sadece Altcoinler",assetFilterLabel:"VARLIK FİLTRESİ",edgeOn:"🔔 YAN UYARILAR AÇIK",edgeOff:"🔕 YAN UYARILAR KAPALI",
+ connecting:"Bağlantı hazırlanıyor",market:"PİYASA",whaleLimit:"BALİNA LİMİTİ",
+ searchCoin:"Coin ara...",
+ clearData:"Verileri Sıfırla",marketLeaders:"📊 PİYASA LİDERLERİ",
+ sessionSubtitle:"Bu oturumda oluşan işlemler · Seçili limit",
+ mostBuyTrades:"🟢 EN ÇOK ALIM İŞLEMİ",mostSellTrades:"🔴 EN ÇOK SATIŞ İŞLEMİ",
+ recentBuyTitle:"🟢 SON 15 DK EN ÇOK ALINAN",recentSellTitle:"🔴 SON 15 DK EN ÇOK SATILAN",
+ largeBuys:"🟢 BÜYÜK ALIM İŞLEMLERİ",largeSells:"🔴 BÜYÜK SATIŞ İŞLEMLERİ",
+ waitingBuys:"Büyük alım işlemleri bekleniyor...",waitingSells:"Büyük satış işlemleri bekleniyor...",
+ bullCandidate:"🐂 POTANSİYEL BOĞA ADAYI",bearCandidate:"🐻 POTANSİYEL AYI ADAYI",
+ candidateNote:"Bu uyarı gerçekleşen işlemlere dayalı kısa vadeli bir değerlendirmedir. Fiyatın bu yönde hareket edeceğini garanti etmez.",
+ soundOff:"🔇 SES KAPALI",soundOn:"🔊 SES AÇIK",trade:"işlem",trades:"işlem",
+ hideLeaders:"📊 Liderleri Gizle",showLeaders:"📊 Piyasa Liderlerini Aç",fontSize:"YAZI BOYUTU",fontSmall:"Küçük",fontNormal:"Normal",fontLarge:"Büyük",fontXLarge:"Çok büyük",pin:"Sabitle",unpin:"Sabitlemeyi kaldır",pinnedHint:"Sabitlendi: panel açık kalır",close:"Kapat",dataStart:"Veri Başlangıç",waiting:"İşlemler bekleniyor...",noData:"Veri bekleniyor",
+ limitBuy:"Seçilen limite uygun alım bekleniyor...",limitSell:"Seçilen limite uygun satış bekleniyor...",
+ buyType:"ALIM (BUY)",sellType:"SATIŞ (SELL)",price:"Fiyat",largeTrade:"büyük işlem",
+ whale1m:"🐋 1M+ BALİNA",whale500k:"500K+",binanceChart:"Binance grafiğini aç",
+ connectionNone:"Bağlantı yok",gettingSymbols:"Pariteler alınıyor...",live:"Canlı veri akışı",
+ checking:"Bağlantı kontrol ediliyor",disconnected:"Bağlantı kesildi",
+ connectingBinance:"Bağlantı kuruluyor",dataError:"Veri alınamadı",
+ noPair:"Uygun parite bulunamadı.",audioUnsupported:"Tarayıcın ses sistemini desteklemiyor.",
+ confirmClear:"Bu oturumda toplanan tüm veriler sıfırlansın mı?",
+ confirmReasonBull:"Neden boğa adayı? Son 2 dakikada alım işlemleri hem sayı hem hacim bakımından satışlardan belirgin şekilde fazla. Sistem en az 3 alım, en az 100.000 $ alım hacmi ve en az 2,5 kat alım/satım oranı koşullarını gördü.",
+ confirmReasonBear:"Neden ayı adayı? Son 2 dakikada satış işlemleri hem sayı hem hacim bakımından alımlardan belirgin şekilde fazla. Sistem en az 3 satış, en az 100.000 $ satış hacmi ve en az 2,5 kat satış/alım oranı koşullarını gördü.",
+ last2min:"Son 2 dakika",buyCount:"Alım sayısı",sellCount:"Satış sayısı",
+ buyVolume:"Alım hacmi",sellVolume:"Satış hacmi",ratioBuy:"Alım / satış oranı",
+ ratioSell:"Sell / buy ratio",currentPrice:"Son işlem fiyatı",
+ leaderEmpty:"Veri bekleniyor",tradeCount:"işlem"
+},
+en:{
+ topBannerText:"Binance Spot Market Buy and Sell Tracking",
+ marketSummary:"MARKET SUMMARY",buy:"BUY",sell:"SELL",net:"NET",
+ radarTitle:"📡 SIGNAL RADAR",radarSubtitle:"Candidates from the last 5 minutes",radarAll:"All",radarBull:"🐂 Bull",radarBear:"🐻 Bear",radarCount:"Signals",radarCoin:"COIN",radarDirection:"DIRECTION",radarStrength:"RATIO",radarPrice:"PRICE",radarTime:"TIME",radarVolume:"VOLUME",radarEmpty:"No signals yet.",assetAll:"All Crypto",assetNoStable:"Exclude Stablecoins",assetMajors:"BTC + ETH Only",assetStable:"Stablecoins Only",assetAltcoins:"Altcoins Only",assetFilterLabel:"ASSET FILTER",edgeOn:"🔔 EDGE ALERTS ON",edgeOff:"🔕 EDGE ALERTS OFF",
+ connecting:"Preparing connection",market:"MARKET",whaleLimit:"WHALE THRESHOLD",
+ searchCoin:"Search coin...",
+ clearData:"Clear Data",marketLeaders:"📊 MARKET LEADERS",
+ sessionSubtitle:"Trades in this session · Selected threshold",
+ mostBuyTrades:"🟢 MOST BUY TRADES",mostSellTrades:"🔴 MOST SELL TRADES",
+ recentBuyTitle:"🟢 TOP BUYERS (LAST 15M)",recentSellTitle:"🔴 TOP SELLERS (LAST 15M)",
+ largeBuys:"🟢 LARGE BUY TRADES",largeSells:"🟢 LARGE SELL TRADES",
+ waitingBuys:"Waiting for large buy trades...",waitingSells:"Waiting for large sell trades...",
+ bullCandidate:"🐂 POTENTIAL BULLISH CANDIDATE",bearCandidate:"🐻 POTENTIAL BEARISH CANDIDATE",
+ candidateNote:"This alert is a short-term assessment based on executed trades. It does not guarantee that price will move in this direction.",
+ soundOff:"🔇 SOUND OFF",soundOn:"🔊 SOUND ON",trade:"trade",trades:"trades",
+ hideLeaders:"📊 Hide Leaders",showLeaders:"📊 Show Market Leaders",fontSize:"FONT SIZE",fontSmall:"Small",fontNormal:"Normal",fontLarge:"Large",fontXLarge:"Extra large",pin:"Pin",unpin:"Unpin",pinnedHint:"Pinned: panel stays open",close:"Close",dataStart:"Data started",waiting:"Waiting for trades...",noData:"Waiting for data",
+ limitBuy:"Waiting for buys that meet the selected threshold...",limitSell:"Waiting for sells that meet the selected threshold...",
+ buyType:"BUY",sellType:"SELL",price:"Price",largeTrade:"large trade",
+ whale1m:"🐋 1M+ WHALE",whale500k:"500K+",binanceChart:"Open Binance chart",
+ connectionNone:"No connection",gettingSymbols:"Loading trading pairs...",live:"Live data stream",
+ checking:"Checking connection",disconnected:"Connection lost",
+ connectingBinance:"Connecting",dataError:"Data unavailable",
+ noPair:"No eligible trading pairs found.",audioUnsupported:"Your browser does not support audio.",
+ confirmClear:"Reset all data collected in this session?",
+ confirmReasonBull:"Why a bullish candidate? During the last 2 minutes, buy trades clearly exceeded sells in both count and volume. The system detected at least 3 buys, at least $100,000 in buy volume, and a buy/sell ratio of at least 2.5.",
+ confirmReasonBear:"Why a bearish candidate? During the last 2 minutes, sell trades clearly exceeded buys in both count and volume. The system detected at least 3 sells, at least $100,000 in sell volume, and a sell/buy ratio of at least 2.5.",
+ last2min:"Last 2 minutes",buyCount:"Buy count",sellCount:"Sell count",
+ buyVolume:"Buy volume",sellVolume:"Sell volume",ratioBuy:"Buy / sell ratio",
+ ratioSell:"Sell / buy ratio",currentPrice:"Latest trade price",
+ leaderEmpty:"Waiting for data",tradeCount:"trades"
+}
+};
+
+let language=localStorage.getItem("whaleRadarLanguage") || "tr";
+if(!TEXT[language]) language="tr";
+
+function t(key){return TEXT[language][key] || TEXT.tr[key] || key;}
+
+const EDGE_ALERT_PREF_KEY="whaleRadarEdgeAlerts_v1";
+let edgeAlertsEnabled=true;
+try{const savedEdge=localStorage.getItem(EDGE_ALERT_PREF_KEY);if(savedEdge!==null)edgeAlertsEnabled=savedEdge==="true";}catch(e){}
+
+function updateEdgeAlertsControl(){
+    const button=$("edgeAlertsToggle");if(!button)return;
+    button.textContent=edgeAlertsEnabled?t("edgeOn"):t("edgeOff");
+    button.classList.toggle("disabled",!edgeAlertsEnabled);
+    button.setAttribute("aria-pressed",String(edgeAlertsEnabled));
+    document.body.classList.toggle("edge-alerts-disabled",!edgeAlertsEnabled);
+}
+function setEdgeAlertsEnabled(enabled){
+    edgeAlertsEnabled=!!enabled;
+    try{localStorage.setItem(EDGE_ALERT_PREF_KEY,String(edgeAlertsEnabled));}catch(e){}
+    if(!edgeAlertsEnabled){
+        for(const direction of ["bull","bear"]){
+            const id=direction==="bull"?"bullEdgeAlert":"bearEdgeAlert";
+            $(id).classList.remove("visible");
+            if(edgeAlertTimers[direction])clearTimeout(edgeAlertTimers[direction]);
+            edgeAlertTimers[direction]=null;
+        }
+    }
+    updateEdgeAlertsControl();
+}
+$("edgeAlertsToggle").addEventListener("click",()=>setEdgeAlertsEnabled(!edgeAlertsEnabled));
+
+function applyLanguage(){
+    document.documentElement.lang=language;
+    $("languageSelect").value=language;
+
+    document.querySelectorAll("[data-i18n]").forEach(el=>{
+        const key=el.dataset.i18n;
+        el.textContent=t(key);
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+        el.placeholder=t(el.dataset.i18nPlaceholder);
+    });
+
+    $("soundButton").textContent=soundEnabled?t("soundOn"):t("soundOff");
+    updateStartTime();
+    updateClock();
+    updateLeadersControls();
+    updateRadarControls();
+    updateEdgeAlertsControl();
+    renderAll();
+    renderRadarList();
+}
+
+$("languageSelect").addEventListener("change",()=>{
+    language=$("languageSelect").value;
+    localStorage.setItem("whaleRadarLanguage",language);
+    applyLanguage();
+});
+
+const LEADERS_PREF_KEY="whaleRadarLeaders_v1";
+const FONT_PREF_KEY="whaleRadarFontSize_v1";
+let leadersOpen=true;
+let leadersPinned=false;
+let fontSizeChoice=localStorage.getItem(FONT_PREF_KEY)||"normal";
+if(!["small","normal","large","xlarge"].includes(fontSizeChoice))fontSizeChoice="normal";
+try{
+    const prefs=JSON.parse(localStorage.getItem(LEADERS_PREF_KEY)||"{}");
+    if(typeof prefs.open==="boolean")leadersOpen=prefs.open;
+    if(typeof prefs.pinned==="boolean")leadersPinned=prefs.pinned;
+}catch(error){}
+if(leadersPinned)leadersOpen=true;
+
+function updateLeadersControls(){
+    const workspace=$("workspace");
+    const toggle=$("leadersToggle");
+    const pin=$("pinLeaders");
+    const close=$("closeLeaders");
+    if(!workspace||!toggle||!pin||!close)return;
+    workspace.classList.toggle("leaders-hidden",!leadersOpen);
+    toggle.classList.toggle("active",leadersOpen);
+    toggle.textContent=leadersOpen?t("hideLeaders"):t("showLeaders");
+    pin.classList.toggle("pinned",leadersPinned);
+    pin.textContent=leadersPinned?"📌":"📍";
+    pin.title=leadersPinned?t("unpin"):t("pin");
+    pin.setAttribute("aria-label",pin.title);
+    close.title=t("close");
+    close.setAttribute("aria-label",t("close"));
+    close.disabled=leadersPinned;
+    close.style.opacity=leadersPinned?".35":"1";
+    $("fontSizeSelect").value=fontSizeChoice;
+}
+function saveLeadersPrefs(){
+    localStorage.setItem(LEADERS_PREF_KEY,JSON.stringify({open:leadersOpen,pinned:leadersPinned}));
+}
+function setLeadersOpen(open){
+    if(!open&&leadersPinned)return;
+    leadersOpen=open;
+    saveLeadersPrefs();
+    updateLeadersControls();
+}
+$("leadersToggle").addEventListener("click",()=>setLeadersOpen(!leadersOpen));
+$("closeLeaders").addEventListener("click",()=>setLeadersOpen(false));
+$("pinLeaders").addEventListener("click",()=>{
+    leadersPinned=!leadersPinned;
+    if(leadersPinned)leadersOpen=true;
+    saveLeadersPrefs();
+    updateLeadersControls();
+});
+$("fontSizeSelect").addEventListener("change",()=>{
+    fontSizeChoice=$("fontSizeSelect").value;
+    document.body.dataset.fontSize=fontSizeChoice;
+    localStorage.setItem(FONT_PREF_KEY,fontSizeChoice);
+});
+document.body.dataset.fontSize=fontSizeChoice;
+
+let currentLimit=50000;
+let marketChoice="all";
+let btcPrice=0;
+let symbols=[];
+let coinPrices={};
+let coinChanges={};
+let sockets=[];
+let reconnectTimers=[];
+let totalBuyVolume=0;
+let totalSellVolume=0;
+let allSignals=[];
+let coinCounters={};
+let bullAlerts=new Map();
+let bearAlerts=new Map();
+let bullHistory=new Map();
+
+let edgeAlertTimers={bull:null,bear:null};
+let dataStartTime=new Date();
+let lastMessageTime=0;
+let audioContext=null;
+let soundEnabled=false;
+let renderPending=false;
+
+const MAX_SIGNALS=5000;
+const CHUNK_SIZE=150;
+const MIN_STORED_TRADE=10000;
+
+let latestSignalId=null;
+let latestSignalTimer=null;
+
+function updateClock(){
+    const now=new Date();
+    const time=new Intl.DateTimeFormat("tr-TR",{
+        timeZone:"Europe/Istanbul",hour:"2-digit",minute:"2-digit",
+        second:"2-digit",hourCycle:"h23"
+    }).format(now);
+    $("clock").textContent=time+" · UTC+3";
+}
+setInterval(updateClock,1000);
+updateClock();
+
+function money(value){
+    if(!Number.isFinite(value))return "$0";
+    const abs=Math.abs(value);
+    if(abs>=1000000)return "$"+(value/1000000).toFixed(2)+"M";
+    if(abs>=1000)return "$"+(value/1000).toFixed(1)+"K";
+    return "$"+value.toFixed(0);
+}
+function exactMoney(value){
+    return "$"+Number(value||0).toLocaleString("en-US",{maximumFractionDigits:2});
+}
+function priceFormat(value){
+    if(value>=1000)return value.toLocaleString("en-US",{maximumFractionDigits:2});
+    if(value>=1)return value.toLocaleString("en-US",{maximumFractionDigits:5});
+    return value.toLocaleString("en-US",{maximumFractionDigits:8});
+}
+function baseCoin(symbol){
+    return symbol.endsWith("USDT")?symbol.slice(0,-4):
+            symbol.endsWith("BTC")?symbol.slice(0,-3):symbol;
+}
+function formatTime(date){
+    return date.toLocaleTimeString(language==="tr"?"tr-TR":"en-US");
+}
+
+/* AUDIO */
+function initializeAudio(){
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return false;
+    if(!audioContext)audioContext=new AudioCtx();
+    if(audioContext.state==="suspended")audioContext.resume();
+    return true;
+}
+function playTone(frequency,duration,volume,delay=0){
+    if(!audioContext||!soundEnabled)return;
+    const oscillator=audioContext.createOscillator();
+    const gainNode=audioContext.createGain();
+    oscillator.type="sine";
+    oscillator.frequency.value=frequency;
+    gainNode.gain.setValueAtTime(.0001,audioContext.currentTime+delay);
+    gainNode.gain.exponentialRampToValueAtTime(volume,audioContext.currentTime+delay+.02);
+    gainNode.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+delay+duration);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start(audioContext.currentTime+delay);
+    oscillator.stop(audioContext.currentTime+delay+duration+.02);
+}
+function playTestSound(){
+    playTone(880,.16,.10,0);
+    playTone(1100,.18,.10,.20);
+}
+function playPattern(type){
+    if(!soundEnabled)return;
+    if(type==="buy"){
+        playTone(740,.16,.10,0);playTone(980,.18,.10,.19);
+    }else if(type==="sell"){
+        playTone(480,.17,.10,0);playTone(330,.18,.10,.20);
+    }else if(type==="bull"){
+        playTone(660,.14,.09,0);playTone(880,.14,.09,.17);playTone(1175,.20,.10,.34);
+    }else if(type==="bear"){
+        playTone(700,.14,.09,0);playTone(520,.14,.09,.17);playTone(350,.20,.10,.34);
+    }
+}
+function playTradeSound(isBuy,totalUSD){
+    if(!soundEnabled)return;
+    if(totalUSD>=1000000){
+        if(isBuy){
+            playTone(880,.18,.13,0);playTone(1175,.20,.13,.22);playTone(1480,.25,.13,.46);
+        }else{
+            playTone(740,.18,.13,0);playTone(520,.20,.13,.22);playTone(300,.25,.13,.46);
+        }
+    }else if(totalUSD>=500000){
+        if(isBuy){playTone(800,.20,.12,0);playTone(1100,.24,.12,.24);}
+        else{playTone(520,.20,.12,0);playTone(300,.24,.12,.24);}
+    }else{
+        playPattern(isBuy?"buy":"sell");
+    }
+}
+$("soundButton").addEventListener("click",()=>{
+    if(soundEnabled){
+        soundEnabled=false;
+        $("soundButton").textContent=t("soundOff");
+        $("soundButton").classList.remove("enabled");
+        return;
+    }
+    if(!initializeAudio()){alert(t("audioUnsupported"));return;}
+    soundEnabled=true;
+    $("soundButton").textContent=t("soundOn");
+    $("soundButton").classList.add("enabled");
+    playTestSound();
+});
+
+/* SUMMARY */
+function updateSummary(){
+    $("headerBuy").textContent=money(totalBuyVolume);
+    $("headerSell").textContent=money(totalSellVolume);
+    const net=totalBuyVolume-totalSellVolume;
+    $("headerNet").textContent=(net>=0?"+":"-")+money(Math.abs(net));
+    $("headerNet").style.color=net>=0?"var(--green)":"var(--red)";
+}
+function recalculateSummary(){
+    const eligible=allSignals.filter(s=>s.totalUSD>=currentLimit&&assetAllowed(s.coin));
+    totalBuyVolume=eligible.filter(s=>s.isBuy).reduce((sum,s)=>sum+s.totalUSD,0);
+    totalSellVolume=eligible.filter(s=>!s.isBuy).reduce((sum,s)=>sum+s.totalUSD,0);
+    updateSummary();
+}
+function updateStartTime(){
+    $("dataStartLabel").textContent=t("dataStart")+": "+formatTime(dataStartTime)+" · UTC+3";
+}
+updateStartTime();
+
+/* BINANCE API */
+async function getJSON(url){
+    const response=await fetch("https://api.binance.com"+url);
+    if(!response.ok)throw new Error("Binance API: "+response.status);
+    return response.json();
+}
+async function discoverSymbols(){
+    setConnection("yellow",t("gettingSymbols"));
+    const [exchangeInfo,tickers]=await Promise.all([
+        getJSON("/api/v3/exchangeInfo"),getJSON("/api/v3/ticker/24hr")
+    ]);
+    const tickerMap=new Map(tickers.map(x=>[x.symbol,x]));
+    let valid=exchangeInfo.symbols.filter(s=>
+        s.status==="TRADING"&&s.isSpotTradingAllowed!==false&&
+        (s.quoteAsset==="USDT"||s.quoteAsset==="BTC")&&tickerMap.has(s.symbol)
+    );
+    if(marketChoice==="usdt")valid=valid.filter(s=>s.quoteAsset==="USDT");
+    else if(marketChoice==="btc")valid=valid.filter(s=>s.quoteAsset==="BTC");
+    
+    valid.sort((a,b)=>Number(tickerMap.get(b.symbol).quoteVolume)-Number(tickerMap.get(a.symbol).quoteVolume));
+    
+    valid.forEach(s => {
+        const tItem = tickerMap.get(s.symbol);
+        if(tItem){
+            const c = baseCoin(s.symbol);
+            coinPrices[c] = Number(tItem.lastPrice);
+            coinChanges[c] = Number(tItem.priceChangePercent);
+        }
+    });
+
+    symbols=valid.map(s=>s.symbol.toLowerCase());
+    if(!symbols.includes("btcusdt"))symbols.push("btcusdt");
+    if(!symbols.length)throw new Error(t("noPair"));
+}
+
+/* WEBSOCKET */
+function closeSockets(){
+    reconnectTimers.forEach(x=>clearTimeout(x));
+    reconnectTimers=[];
+    sockets.forEach(ws=>{try{ws.onclose=null;ws.onerror=null;ws.close();}catch(e){}});
+    sockets=[];
+}
+function setConnection(state,text){
+    $("connectionLed").className="led "+state;
+    $("connectionText").textContent=text;
+}
+function connectChunk(chunk,index){
+    const streams=chunk.map(s=>s+"@aggTrade");
+    const url="wss://stream.binance.com:9443/stream?streams="+streams.join("/");
+    let ws;
+    try{ws=new WebSocket(url);}catch(error){scheduleReconnect(chunk,index);return;}
+    sockets[index]=ws;
+    ws.onopen=()=>updateConnectionHealth();
+    ws.onmessage=event=>{
+        try{
+            const packet=JSON.parse(event.data);
+            if(!packet.data)return;
+            lastMessageTime=Date.now();
+            processTrade(packet.data);
+        }catch(error){}
+    };
+    ws.onerror=()=>updateConnectionHealth();
+    ws.onclose=()=>{updateConnectionHealth();scheduleReconnect(chunk,index);};
+}
+function scheduleReconnect(chunk,index){
+    if(reconnectTimers[index])clearTimeout(reconnectTimers[index]);
+    reconnectTimers[index]=setTimeout(()=>connectChunk(chunk,index),3500);
+}
+function updateConnectionHealth(){
+    const total=sockets.length;
+    const open=sockets.filter(s=>s&&s.readyState===WebSocket.OPEN).length;
+    if(total===0)setConnection("red",t("connectionNone"));
+    else if(open===total&&lastMessageTime&&Date.now()-lastMessageTime<180000)setConnection("green",t("live"));
+    else if(open>0)setConnection("yellow",t("checking"));
+    else setConnection("red",t("disconnected"));
+}
+setInterval(updateConnectionHealth,5000);
+
+let radarStartRequest=0;
+async function startRadar(){
+    const requestId=++radarStartRequest;
+    closeSockets();
+    try{
+        await discoverSymbols();
+        if(requestId!==radarStartRequest)return;
+        const chunks=[];
+        for(let i=0;i<symbols.length;i+=CHUNK_SIZE)chunks.push(symbols.slice(i,i+CHUNK_SIZE));
+        sockets=new Array(chunks.length);
+        chunks.forEach((chunk,index)=>{
+            setTimeout(()=>{
+                if(requestId===radarStartRequest)connectChunk(chunk,index);
+            },index*250);
+        });
+        setConnection("yellow",t("connectingBinance"));
+    }catch(error){
+        console.error(error);
+        if(requestId===radarStartRequest)setConnection("red",t("dataError"));
+    }
+}
+
+/* TRADE ANALYSIS */
+function processTrade(d){
+    const symbol=d.s;
+    const price=Number(d.p);
+    const quantity=Number(d.q);
+    if(!Number.isFinite(price)||!Number.isFinite(quantity))return;
+    if(symbol==="BTCUSDT"){btcPrice=price;}
+
+    const coin=baseCoin(symbol);
+    coinPrices[coin]=price;
+
+    const isBuy=!d.m;
+    let totalUSD=0;
+    if(symbol.endsWith("USDT"))totalUSD=price*quantity;
+    else if(symbol.endsWith("BTC")){
+        if(!btcPrice)return;
+        totalUSD=price*quantity*btcPrice;
+    }else return;
+
+    if(!Number.isFinite(totalUSD)||totalUSD<=0)return;
+    const now=Date.now();
+
+    if(totalUSD>=MIN_STORED_TRADE){
+        const candidateTrade={
+            id:now+Math.random(),timestamp:now,time:formatTime(new Date(now)),
+            symbol,coin,isBuy,totalUSD,price
+        };
+        checkDirectionalCandidate(candidateTrade);
+        const bull=bullAlerts.get(coin);
+        const bear=bearAlerts.get(coin);
+        if(bull)bull.price=price;
+        if(bear)bear.price=price;
+    }
+
+    if(totalUSD<MIN_STORED_TRADE)return;
+
+    coinCounters[symbol]=(coinCounters[symbol]||0)+1;
+    const signal={
+        id:now+Math.random(),timestamp:now,time:formatTime(new Date(now)),
+        symbol,coin,isBuy,totalUSD,price,count:coinCounters[symbol]
+    };
+    allSignals.unshift(signal);
+
+    if(allSignals.length>MAX_SIGNALS)allSignals.pop();
+
+    if(totalUSD>=currentLimit){
+        latestSignalId=signal.id;
+        if(latestSignalTimer)clearTimeout(latestSignalTimer);
+        latestSignalTimer=setTimeout(()=>{
+            latestSignalId=null;
+            scheduleRender();
+        },4700);
+
+        if(assetAllowed(coin)){
+            if(isBuy)totalBuyVolume+=totalUSD;
+            else totalSellVolume+=totalUSD;
+            playTradeSound(isBuy,totalUSD);
+        }
+        updateSummary();
+        scheduleRender();
+    }
+}
+
+/* BULL / BEAR CANDIDATES */
+const CANDIDATE_LIFETIME=5*60*1000;
+const CANDIDATE_COOLDOWN=90*1000;
+const CANDIDATE_WINDOW=120*1000;
+const EDGE_ALERT_DURATION=10000;
+
+function showEdgeAlert(direction,a){
+    if(!edgeAlertsEnabled||!assetAllowed(a.coin))return;
+    const isBull=direction==="bull";
+    const panel=$(isBull?"bullEdgeAlert":"bearEdgeAlert");
+    const coinElement=$(isBull?"bullEdgeCoin":"bearEdgeCoin");
+    const detailElement=$(isBull?"bullEdgeDetail":"bearEdgeDetail");
+    const reasonElement=$(isBull?"bullEdgeReason":"bearEdgeReason");
+
+    coinElement.textContent=a.coin;
+
+    const lines=[
+        t("last2min"),
+        t("buyCount")+": "+a.buyCount+" · "+t("sellCount")+": "+a.sellCount,
+        t("buyVolume")+": "+money(a.buyVol)+" · "+t("sellVolume")+": "+money(a.sellVol),
+        (isBull?t("ratioBuy"):t("ratioSell"))+": "+a.ratio.toFixed(2)+"x",
+        t("currentPrice")+": "+priceFormat(a.price)
+    ];
+    detailElement.textContent=lines.join("\n");
+    reasonElement.textContent=isBull?t("confirmReasonBull"):t("confirmReasonBear");
+
+    panel.classList.remove("visible");
+    void panel.offsetWidth;
+    panel.classList.add("visible");
+
+    if(edgeAlertTimers[direction])clearTimeout(edgeAlertTimers[direction]);
+    edgeAlertTimers[direction]=setTimeout(()=>{
+        panel.classList.remove("visible");
+        edgeAlertTimers[direction]=null;
+    },EDGE_ALERT_DURATION);
+}
+
+function pruneCandidateAlerts(){
+    const cutoff=Date.now()-CANDIDATE_LIFETIME;
+    for(const [coin,a] of bullAlerts)if(a.timestamp<cutoff)bullAlerts.delete(coin);
+    for(const [coin,a] of bearAlerts)if(a.timestamp<cutoff)bearAlerts.delete(coin);
+    for(const [coin,history] of bullHistory){
+        const fresh=history.filter(s=>Date.now()-s.timestamp<=CANDIDATE_WINDOW);
+        if(fresh.length)bullHistory.set(coin,fresh);
+        else bullHistory.delete(coin);
+    }
+    if(typeof renderRadarList === "function")renderRadarList();
+}
+
+function checkDirectionalCandidate(signal){
+    const coin=signal.coin;
+    const now=Date.now();
+    let history=bullHistory.get(coin)||[];
+    history.push(signal);
+    history=history.filter(s=>now-s.timestamp<=CANDIDATE_WINDOW);
+    bullHistory.set(coin,history);
+
+    const buys=history.filter(s=>s.isBuy);
+    const sells=history.filter(s=>!s.isBuy);
+    const buyVol=buys.reduce((sum,s)=>sum+s.totalUSD,0);
+    const sellVol=sells.reduce((sum,s)=>sum+s.totalUSD,0);
+    const bullRatio=buyVol/Math.max(sellVol,1);
+    const bearRatio=sellVol/Math.max(buyVol,1);
+
+    if(buys.length>=3&&buyVol>=100000&&bullRatio>=2.5){
+        const previous=bullAlerts.get(coin);
+        if(!previous||now-previous.timestamp>CANDIDATE_COOLDOWN){
+            const alertData={
+                coin,timestamp:now,buyCount:buys.length,sellCount:sells.length,
+                buyVol,sellVol,ratio:bullRatio,price:signal.price,symbol:signal.symbol
+            };
+            bullAlerts.set(coin,alertData);
+            showEdgeAlert("bull",alertData);
+            if(assetAllowed(coin))playPattern("bull");
+            scheduleRender();
+        }
+    }
+
+    if(sells.length>=3&&sellVol>=100000&&bearRatio>=2.5){
+        const previous=bearAlerts.get(coin);
+        if(!previous||now-previous.timestamp>CANDIDATE_COOLDOWN){
+            const alertData={
+                coin,timestamp:now,buyCount:buys.length,sellCount:sells.length,
+                buyVol,sellVol,ratio:bearRatio,price:signal.price,symbol:signal.symbol
+            };
+            bearAlerts.set(coin,alertData);
+            showEdgeAlert("bear",alertData);
+            if(assetAllowed(coin))playPattern("bear");
+            scheduleRender();
+        }
+    }
+}
+
+/* SIGNAL ROWS */
+function makeSignalRow(s){
+    const row=document.createElement("div");
+    row.className="signal-row";
+    if(!s.isBuy)row.classList.add("sell-row");
+
+    if(s.id===latestSignalId&&Date.now()-s.timestamp<4700){
+        row.classList.add(s.isBuy?"flash-buy":"flash-sell");
+    }
+
+    if(s.totalUSD>=1000000)row.classList.add("tier-1m");
+    else if(s.totalUSD>=500000)row.classList.add("tier-500k");
+
+    const main=document.createElement("div");
+    main.className="signal-main";
+    const top=document.createElement("div");
+    top.className="signal-top";
+
+    const counter=document.createElement("span");
+    counter.className="counter";
+    counter.textContent="#"+s.count;
+
+    const coin=document.createElement("span");
+    coin.className="coin-name";
+    coin.textContent=s.symbol;
+    coin.title=t("binanceChart");
+    coin.addEventListener("click",()=>{
+        const quote=s.symbol.endsWith("USDT")?"USDT":"BTC";
+        const base=s.symbol.slice(0,-quote.length);
+        window.open("https://www.binance.com/en/trade/"+base+"_"+quote,"_blank");
+    });
+
+    const type=document.createElement("span");
+    type.className="signal-type "+(s.isBuy?"buy-color":"sell-color");
+    type.textContent=s.isBuy?t("buyType"):t("sellType");
+    top.append(counter,coin,type);
+
+    if(s.totalUSD>=1000000){
+        const badge=document.createElement("span");
+        badge.className="tier-badge badge-1m";
+        badge.textContent=t("whale1m");
+        top.appendChild(badge);
+    }else if(s.totalUSD>=500000){
+        const badge=document.createElement("span");
+        badge.className="tier-badge badge-500k";
+        badge.textContent=t("whale500k");
+        top.appendChild(badge);
+    }
+
+    const detail=document.createElement("div");
+    detail.className="signal-detail";
+    detail.textContent="["+s.time+"] · "+s.count+". "+t("largeTrade");
+    main.append(top,detail);
+
+    const value=document.createElement("div");
+    value.className="signal-value";
+    const amount=document.createElement("strong");
+    amount.textContent=exactMoney(s.totalUSD);
+    const price=document.createElement("small");
+    price.textContent=t("price")+": "+priceFormat(s.price);
+    value.append(amount,price);
+    row.append(main,value);
+    return row;
+}
+
+function renderSignals(){
+    const query=$("coinSearch").value.trim().toUpperCase();
+    const eligible=allSignals.filter(s=>s.totalUSD>=currentLimit&&s.symbol.includes(query)&&assetAllowed(s.coin));
+    const buys=eligible.filter(s=>s.isBuy);
+    const sells=eligible.filter(s=>!s.isBuy);
+
+    $("buyList").replaceChildren();
+    $("sellList").replaceChildren();
+    $("buyCount").textContent=buys.length+" "+t("trades");
+    $("sellCount").textContent=sells.length+" "+t("trades");
+
+    if(!buys.length){
+        const empty=document.createElement("div");
+        empty.className="empty-state";
+        empty.textContent=t("limitBuy");
+        $("buyList").appendChild(empty);
+    }else buys.slice(0,120).forEach(s=>$("buyList").appendChild(makeSignalRow(s)));
+
+    if(!sells.length){
+        const empty=document.createElement("div");
+        empty.className="empty-state";
+        empty.textContent=t("limitSell");
+        $("sellList").appendChild(empty);
+    }else sells.slice(0,120).forEach(s=>$("sellList").appendChild(makeSignalRow(s)));
+}
+
+/* TOP LISTS & 15-MINUTE RECENT LEADERS */
+function entriesFrom(obj){
+    return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,10);
+}
+
+function renderTopLists(){
+    const buyCounts={}, sellCounts={}, recentBuyCounts={}, recentSellCounts={};
+    const eligible = allSignals.filter(s => s.totalUSD >= currentLimit && assetAllowed(s.coin));
+    const now = Date.now();
+    const fifteenMinsAgo = now - (15 * 60 * 1000);
+
+    eligible.forEach(s => {
+        const coin = s.coin;
+        if(s.isBuy){
+            buyCounts[coin] = (buyCounts[coin] || 0) + 1;
+        }else{
+            sellCounts[coin] = (sellCounts[coin] || 0) + 1;
+        }
+
+        if(s.timestamp >= fifteenMinsAgo){
+            if(s.isBuy){
+                recentBuyCounts[coin] = (recentBuyCounts[coin] || 0) + 1;
+            }else{
+                recentSellCounts[coin] = (recentSellCounts[coin] || 0) + 1;
+            }
+        }
+    });
+
+    const lists=[
+        ["topBuyCount", buyCounts, false],
+        ["topSellCount", sellCounts, false],
+        ["topRecentBuy", recentBuyCounts, false],
+        ["topRecentSell", recentSellCounts, false]
+    ];
+
+    lists.forEach(([id, data])=>{
+        const entries=entriesFrom(data);
+        const ol=$(id);
+        ol.replaceChildren();
+        if(!entries.length){
+            const li=document.createElement("li");
+            li.textContent=t("leaderEmpty");
+            ol.appendChild(li);
+            return;
+        }
+        entries.forEach(([coin, value])=>{
+            const li=document.createElement("li");
+            li.textContent=coin;
+            const span=document.createElement("span");
+            span.textContent=value+" "+t("trades");
+            li.appendChild(span);
+            ol.appendChild(li);
+        });
+    });
+
+    updateTicker();
+}
+
+/* TICKER */
+function updateTicker(){
+    const track=$("tickerTrack");
+    if(!track)return;
+
+    pruneCandidateAlerts();
+    const topSymbols=symbols.slice(0, 50);
+    const items=[];
+
+    topSymbols.forEach(sym=>{
+        const coin=baseCoin(sym.toUpperCase());
+        const price=coinPrices[coin];
+        const change=coinChanges[coin];
+
+        if(price!==undefined){
+            let changeHtml = "";
+            if(change !== undefined){
+                const sign = change >= 0 ? "+" : "";
+                const cls = change >= 0 ? "ticker-pos" : "ticker-neg";
+                changeHtml = ` <span class="${cls}">(${sign}${change.toFixed(2)}%)</span>`;
+            }
+            items.push(`<span class="ticker-box"><b>${coin}</b>: ${priceFormat(price)}${changeHtml}</span>`);
+        }
+    });
+
+    if(!items.length){
+        track.innerHTML=`<span class="ticker-item">${t("waiting")}</span>`;
+        return;
+    }
+
+    const html=`<span class="ticker-item">📊 <b>TOP 50 VOLUME TICKER</b> &nbsp;|&nbsp; `+items.join(" &nbsp;|&nbsp; ")+`</span>`;
+    track.innerHTML=html+" &nbsp;|&nbsp; "+html;
+}
+
+setInterval(()=>{
+    if(symbols.length > 0) updateTicker();
+}, 2000);
+
+/* RENDER */
+function renderAll(){
+    renderSignals();
+    renderTopLists();
+    updateSummary();
+}
+function scheduleRender(){
+    if(renderPending)return;
+    renderPending=true;
+    setTimeout(()=>{
+        renderPending=false;
+        renderAll();
+        if(typeof renderRadarList === "function")renderRadarList();
+    },500);
+}
+$("coinSearch").addEventListener("input",renderSignals);
+
+/* CONTROLS */
+$("threshold").addEventListener("change",()=>{
+    currentLimit=Number($("threshold").value);
+    recalculateSummary();
+    renderAll();
+    startRadar();
+});
+$("marketSelect").addEventListener("change",()=>{
+    marketChoice=$("marketSelect").value;
+    startRadar();
+});
+
+/* RESET DATA */
+$("clearData").addEventListener("click",()=>{
+    if(!confirm(t("confirmClear")))return;
+    allSignals=[];
+    coinCounters={};
+    coinPrices={};
+    coinChanges={};
+    bullAlerts.clear();
+    bearAlerts.clear();
+    bullHistory.clear();
+    latestSignalId=null;
+    if(latestSignalTimer)clearTimeout(latestSignalTimer);
+
+    if(edgeAlertTimers.bull)clearTimeout(edgeAlertTimers.bull);
+    if(edgeAlertTimers.bear)clearTimeout(edgeAlertTimers.bear);
+    edgeAlertTimers.bull=null;
+    edgeAlertTimers.bear=null;
+
+    $("bullEdgeAlert").classList.remove("visible");
+    $("bearEdgeAlert").classList.remove("visible");
+
+    totalBuyVolume=0;
+    totalSellVolume=0;
+    dataStartTime=new Date();
+    updateStartTime();
+    renderAll();
+    renderRadarList();
+});
+
+/* SIGNAL RADAR PANEL */
+const RADAR_PREF_KEY="whaleRadarPanelPrefs_v1";
+let radarOpen=false;
+let radarPinned=false;
+let radarTab="all";
+const GLOBAL_ASSET_FILTER_KEY="whaleRadarGlobalAssetFilter_v1";
+let globalAssetFilter=localStorage.getItem(GLOBAL_ASSET_FILTER_KEY)||"nostable";
+if(!["all","nostable","majors","stable","altcoins"].includes(globalAssetFilter))globalAssetFilter="nostable";
+let radarLastSeen=new Set();
+
+function updateRadarControls(){
+    const panel=$("radarWindow"),toggle=$("radarToggle"),pin=$("pinRadar"),close=$("closeRadar");
+    if(!panel||!toggle||!pin||!close)return;
+    panel.style.display=radarOpen?"flex":"none";
+    toggle.classList.toggle("active",radarOpen);
+    pin.classList.toggle("pinned",radarPinned);
+    pin.textContent=radarPinned?"📌":"📍";
+    pin.title=radarPinned?t("unpin"):t("pin");
+    close.title=t("close");
+    close.disabled=radarPinned;
+    close.style.opacity=radarPinned?".35":"1";
+}
+function saveRadarPrefs(){
+    const panel=$("radarWindow");
+    if(!panel)return;
+    const r=panel.getBoundingClientRect();
+    localStorage.setItem(RADAR_PREF_KEY,JSON.stringify({open:radarOpen,pinned:radarPinned,left:r.left,top:r.top,width:r.width,height:r.height}));
+}
+function loadRadarPrefs(){
+    const panel=$("radarWindow");
+    try{
+        const p=JSON.parse(localStorage.getItem(RADAR_PREF_KEY)||"{}");
+        if(typeof p.open==="boolean")radarOpen=p.open;
+        if(typeof p.pinned==="boolean")radarPinned=p.pinned;
+        if(Number.isFinite(p.left))panel.style.left=p.left+"px";
+        if(Number.isFinite(p.top))panel.style.top=p.top+"px";
+        if(Number.isFinite(p.width))panel.style.width=p.width+"px";
+        if(Number.isFinite(p.height))panel.style.height=p.height+"px";
+    }catch(e){}
+    if(radarPinned)radarOpen=true;
+    updateRadarControls();
+}
+function setRadarOpen(open){
+    if(!open&&radarPinned)return;
+    radarOpen=open;
+    updateRadarControls();
+    saveRadarPrefs();
+    if(open)renderRadarList();
+}
+const STABLECOIN_ASSETS=new Set(["USDT","USDC","FDUSD","TUSD","USDP","DAI","BUSD","USDE","PYUSD","EURC","EURI","USTC","FRAX","USDD","GUSD","LUSD","USD1","UST","USDS","CRVUSD","GHO","USDX","U","PAXG","RLUSD","XUSD","RWUSD","BFUSD","EUR","XAUT"]);
+function assetAllowed(coin){
+    const isStable=STABLECOIN_ASSETS.has(coin);
+    const isMajor=coin==="BTC"||coin==="ETH";
+    if(globalAssetFilter==="all")return true;
+    if(globalAssetFilter==="nostable")return !isStable;
+    if(globalAssetFilter==="majors")return isMajor;
+    if(globalAssetFilter==="stable")return isStable;
+    return !isStable&&!isMajor;
+}
+function renderRadarList(){
+    const body=$("radarTableBody"),count=$("radarCount");
+    if(!body||!count)return;
+    pruneCandidateAlertsWithoutRender();
+    let items=[];
+    if(radarTab==="all"||radarTab==="bull")for(const a of bullAlerts.values())items.push({...a,direction:"bull"});
+    if(radarTab==="all"||radarTab==="bear")for(const a of bearAlerts.values())items.push({...a,direction:"bear"});
+    items=items.filter(a=>assetAllowed(a.coin));
+    items.sort((a,b)=>b.timestamp-a.timestamp);
+    body.replaceChildren();
+    count.textContent=String(items.length);
+    if(!items.length){
+        const tr=document.createElement("tr"),td=document.createElement("td");
+        td.colSpan=8;td.className="empty-state";td.textContent=t("radarEmpty");tr.appendChild(td);body.appendChild(tr);return;
+    }
+    for(const a of items){
+        const tr=document.createElement("tr");
+        tr.className=(a.direction==="bull"?"radar-bull-row":"radar-bear-row");
+        const values=[a.symbol,a.direction==="bull"?(language==="tr"?"🐂 BOĞA":"🐂 BULL"):(language==="tr"?"🐻 AYI":"🐻 BEAR"),a.ratio.toFixed(2)+"x",priceFormat(a.price),new Date(a.timestamp).toLocaleTimeString(language==="tr"?"tr-TR":"en-US"),String(a.buyCount),String(a.sellCount),money(a.direction==="bull"?a.buyVol:a.sellVol)];
+        values.forEach((value,i)=>{
+            const td=document.createElement("td");
+            if(i===0){
+                const link=document.createElement("span");link.className="coin-name";link.textContent=value;link.title=t("binanceChart");
+                link.addEventListener("click",()=>{const q=a.symbol.endsWith("USDT")?"USDT":"BTC";const b=a.symbol.slice(0,-q.length);window.open("https://www.binance.com/en/trade/"+b+"_"+q,"_blank");});
+                td.appendChild(link);
+            }else td.textContent=value;
+            tr.appendChild(td);
+        });
+        const key=a.direction+":"+a.coin+":"+a.timestamp;
+        if(!radarLastSeen.has(key))tr.classList.add("radar-new");
+        radarLastSeen.add(key);
+        body.appendChild(tr);
+    }
+    if(radarLastSeen.size>500)radarLastSeen=new Set([...radarLastSeen].slice(-250));
+}
+function pruneCandidateAlertsWithoutRender(){
+    const cutoff=Date.now()-CANDIDATE_LIFETIME;
+    for(const [coin,a] of bullAlerts)if(a.timestamp<cutoff)bullAlerts.delete(coin);
+    for(const [coin,a] of bearAlerts)if(a.timestamp<cutoff)bearAlerts.delete(coin);
+}
+$("radarToggle").addEventListener("click",()=>setRadarOpen(!radarOpen));
+$("closeRadar").addEventListener("click",()=>setRadarOpen(false));
+$("pinRadar").addEventListener("click",()=>{radarPinned=!radarPinned;if(radarPinned)radarOpen=true;updateRadarControls();saveRadarPrefs();});
+document.querySelectorAll("[data-radar-tab]").forEach(button=>button.addEventListener("click",()=>{
+    radarTab=button.dataset.radarTab;
+    document.querySelectorAll("[data-radar-tab]").forEach(b=>b.classList.toggle("active",b===button));
+    renderRadarList();
+}));
+$("globalAssetFilter").value=globalAssetFilter;
+$("globalAssetFilter").addEventListener("change",()=>{
+    globalAssetFilter=$("globalAssetFilter").value;
+    localStorage.setItem(GLOBAL_ASSET_FILTER_KEY,globalAssetFilter);
+    recalculateSummary();
+    renderAll();
+    renderRadarList();
+});
+(function enableRadarDragging(){
+    const panel=$("radarWindow"),head=panel.querySelector(".window-head");
+    let moving=false,sx=0,sy=0,sl=0,st=0;
+    head.addEventListener("pointerdown",e=>{
+        if(e.target.closest("button")||window.innerWidth<=650)return;
+        moving=true;const r=panel.getBoundingClientRect();sx=e.clientX;sy=e.clientY;sl=r.left;st=r.top;head.setPointerCapture(e.pointerId);e.preventDefault();
+    });
+    head.addEventListener("pointermove",e=>{
+        if(!moving)return;
+        panel.style.left=Math.max(0,Math.min(innerWidth-panel.offsetWidth,sl+e.clientX-sx))+"px";
+        panel.style.top=Math.max(0,Math.min(innerHeight-70,st+e.clientY-sy))+"px";
+        panel.style.right="auto";panel.style.bottom="auto";
+    });
+    const stop=()=>{if(moving){moving=false;saveRadarPrefs();}};
+    head.addEventListener("pointerup",stop);head.addEventListener("pointercancel",stop);
+})();
+
+setInterval(()=>{if(radarOpen)renderRadarList();},1000);
+loadRadarPrefs();
+updateEdgeAlertsControl();
+renderRadarList();
+
+/* DRAGGING AND LAYOUT */
+const windows=["buyWindow","sellWindow","topWindow"];
+
+function enableDragging(){
+    windows.forEach(id=>{
+        const win=$(id);
+        const head=win.querySelector(".window-head");
+        let dragging=false,startX=0,startY=0,startLeft=0,startTop=0;
+
+        head.addEventListener("pointerdown",event=>{
+            if(event.target.closest("button"))return;
+            if(window.innerWidth<=650)return;
+            dragging=true;
+            startX=event.clientX;
+            startY=event.clientY;
+            const rect=win.getBoundingClientRect();
+            const parent=$("workspace").getBoundingClientRect();
+            startLeft=rect.left-parent.left;
+            startTop=rect.top-parent.top;
+            head.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+
+        head.addEventListener("pointermove",event=>{
+            if(!dragging)return;
+            const parent=$("workspace").getBoundingClientRect();
+            const maxLeft=parent.width-win.offsetWidth;
+            const maxTop=parent.height-win.offsetHeight;
+            const left=Math.max(0,Math.min(maxLeft,startLeft+event.clientX-startX));
+            const top=Math.max(0,Math.min(maxTop,startTop+event.clientY-startY));
+            win.style.left=left+"px";
+            win.style.top=top+"px";
+        });
+
+        head.addEventListener("pointerup",()=>dragging=false);
+        head.addEventListener("pointercancel",()=>dragging=false);
+    });
+}
+
+enableDragging();
+updateLeadersControls();
+applyLanguage();
+updateSummary();
+renderAll();
+renderRadarList();
+startRadar();
+
+</script>
+</body>
+</html>
